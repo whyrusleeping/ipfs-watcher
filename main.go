@@ -52,7 +52,7 @@ func main() {
 	flag.Parse()
 
 	go monitorHttpEndpoint(vers_g, "https://ipfs.io/version", time.Second*5)
-	go monitorHttpEndpoint(blog_g, "https://blog.ipfs.io", time.Second*30)
+	go monitorHttpEndpoint(blog_g, "http://blog.ipfs.io", time.Second*30)
 
 	http.Handle("/metrics", prometheus.Handler())
 	http.ListenAndServe(*addr, nil)
