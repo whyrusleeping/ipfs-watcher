@@ -109,7 +109,6 @@ func monitorPings(g prometheus.Gauge, peerid string) {
 		}
 
 		for val := range lat {
-			fmt.Printf("peer %s: %s\n", peerid, val)
 			g.Set(val.Seconds())
 		}
 	}
