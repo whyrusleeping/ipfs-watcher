@@ -169,10 +169,13 @@ func main() {
 
 	for k, v := range bootstrappers {
 		ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:      "ping_" + k,
+			Name:      "ping",
 			Subsystem: "ext_watcher",
 			Namespace: "ipfs",
-			Help:      "time it takes to ping " + v,
+			Help:      "time it takes to ping a host",
+			ConstLabels: prometheus.Labels{
+				"host": k,
+			},
 		})
 
 		prometheus.MustRegister(ping_g)
