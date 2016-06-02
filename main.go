@@ -163,6 +163,11 @@ func tryResolve(g prometheus.Gauge) error {
 		return err
 	}
 
+	err = nd.Bootstrap(core.DefaultBootstrapConfig)
+	if err != nil {
+		return err
+	}
+
 	bspid, err := peer.IDB58Decode("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ")
 	if err != nil {
 		return err
@@ -172,16 +177,6 @@ func tryResolve(g prometheus.Gauge) error {
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		for {
-			select {
-			case <-time.After(time.Second):
-				fmt.Println(len(nd.PeerHost.Network().Conns()))
-			case <-ctx.Done():
-			}
-		}
-	}()
 
 	pi := pstore.PeerInfo{
 		ID:    bspid,
@@ -199,15 +194,12 @@ func tryResolve(g prometheus.Gauge) error {
 		return err
 	}
 
-	fmt.Println("hash is: ", h)
-
 	dur, err := timeHttpFetch("https://v04x.ipfs.io/ipfs/" + h)
 	if err != nil {
 		ipns_g.Set(-1)
 		return err
 	}
 
-	fmt.Println("resolve took: ", dur)
 	g.Set(dur.Seconds())
 	return nil
 }
@@ -227,29 +219,26 @@ func main() {
 	addr := flag.String("addr", ":9999", "address to serve metrics on")
 	flag.Parse()
 
-	//go monitorHttpEndpoint(vers_g, "https://ipfs.io/version", time.Second*5)
-	//go monitorHttpEndpoint(blog_g, "http://blog.ipfs.io", time.Second*30)
-	//go monitorHttpEndpoint(ipns_g, "https://ipfs.io/ipns/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", time.Minute)
+	go monitorHttpEndpoint(vers_g, "https://ipfs.io/version", time.Second*5)
+	go monitorHttpEndpoint(blog_g, "http://blog.ipfs.io", time.Second*30)
+	go monitorHttpEndpoint(ipns_g, "https://ipfs.io/ipns/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", time.Minute)
 
-	go monitorNewHashResolution(newh_g, time.Second)
-	//go monitorNewHashResolution(newh_g, time.Second*30)
+	go monitorNewHashResolution(newh_g, time.Second*30)
 
-	/*
-		for k, v := range bootstrappers {
-			ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
-				Name:      "ping",
-				Subsystem: "ext_watcher",
-				Namespace: "ipfs",
-				Help:      "time it takes to ping a host",
-				ConstLabels: prometheus.Labels{
-					"host": k,
-				},
-			})
+	for k, v := range bootstrappers {
+		ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name:      "ping",
+			Subsystem: "ext_watcher",
+			Namespace: "ipfs",
+			Help:      "time it takes to ping a host",
+			ConstLabels: prometheus.Labels{
+				"host": k,
+			},
+		})
 
-			prometheus.MustRegister(ping_g)
-			go monitorPings(ping_g, v)
-		}
-	*/
+		prometheus.MustRegister(ping_g)
+		go monitorPings(ping_g, v)
+	}
 
 	http.Handle("/metrics", prometheus.Handler())
 	http.ListenAndServe(*addr, nil)
