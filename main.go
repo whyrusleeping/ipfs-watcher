@@ -40,10 +40,13 @@ var (
 	})
 
 	ipns_g = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name:      "mars_ipns_get",
+		Name:      "ipns_get",
 		Subsystem: "ext_watcher",
 		Namespace: "ipfs",
-		Help:      "time it takes to get ipfs.io/ipns/<mars>",
+		Help:      "time it takes to get ipfs.io/ipns/<ID>",
+		ConstLabels: prometheus.Labels{
+			"host": "mars",
+		},
 	})
 
 	newh_g = prometheus.NewGauge(prometheus.GaugeOpts{
