@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,8 +14,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
+	peer "gx/ipfs/QmQGwpJy9P4yXZySmqkZEXCmbBpJUb8xntCv8Ca4taZwDC/go-libp2p-peer"
+	ma "gx/ipfs/QmYzDkkgAEmrcNzFCiYo6L1dTX4EAG1gZkbtdbd9trL4vd/go-multiaddr"
+	pstore "gx/ipfs/QmZ62t46e9p7vMYqCmptwQC1RhRv5cpQ5cwoqYspedaXyq/go-libp2p-peerstore"
 
 	core "github.com/ipfs/go-ipfs/core"
+	cunix "github.com/ipfs/go-ipfs/core/coreunix"
 )
 
 var _ = os.DevNull
@@ -33,26 +38,49 @@ var (
 		Namespace: "ipfs",
 		Help:      "time it takes to get blog.ipfs.io",
 	})
+
+	ipns_g = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:      "mars_ipns_get",
+		Subsystem: "ext_watcher",
+		Namespace: "ipfs",
+		Help:      "time it takes to get ipfs.io/ipns/<mars>",
+	})
+
+	newh_g = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:      "new_has_res",
+		Subsystem: "ext_watcher",
+		Namespace: "ipfs",
+		Help:      "time it takes a new node to resolve their data on the gateway",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(vers_g)
 	prometheus.MustRegister(blog_g)
+	prometheus.MustRegister(ipns_g)
 }
 
 func monitorHttpEndpoint(g prometheus.Gauge, url string, interval time.Duration) {
 	for range time.Tick(interval) {
-		before := time.Now()
-		resp, err := http.Get(url)
+		took, err := timeHttpFetch(url)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		io.Copy(ioutil.Discard, resp.Body)
-		resp.Body.Close()
-		took := time.Now().Sub(before)
 		g.Set(took.Seconds())
 	}
+}
+
+func timeHttpFetch(url string) (time.Duration, error) {
+	before := time.Now()
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+	took := time.Now().Sub(before)
+	return took, nil
 }
 
 func doPing(target string) (<-chan time.Duration, error) {
@@ -117,37 +145,72 @@ func monitorPings(g prometheus.Gauge, peerid string) {
 var _ = context.Background
 var _ = core.IpnsValidatorTag
 
-/*
-func tryResolve(path string) error {
+func monitorNewHashResolution(g prometheus.Gauge, period time.Duration) {
+	for range time.Tick(period) {
+		err := tryResolve(g)
+		if err != nil {
+			fmt.Println("new hash resolve err: ", err)
+		}
+	}
+}
+
+func tryResolve(g prometheus.Gauge) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nd, err := core.NewNode(ctx, &core.BuildCfg{Online: true})
+	nd, err := makeNode(ctx)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	bspid, err := peer.IDB58Decode("QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	addr, err := ma.NewMultiaddr("/ip4/104.131.131.82/tcp/4001")
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	pi := peer.PeerInfo{
+	go func() {
+		for {
+			select {
+			case <-time.After(time.Second):
+				fmt.Println(len(nd.PeerHost.Network().Conns()))
+			case <-ctx.Done():
+			}
+		}
+	}()
+
+	pi := pstore.PeerInfo{
 		ID:    bspid,
 		Addrs: []ma.Multiaddr{addr},
 	}
 
 	err = nd.PeerHost.Connect(ctx, pi)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	rr := rand.New(rand.NewSource(time.Now().UnixNano()))
+	h, err := cunix.Add(nd, io.LimitReader(rr, 2048))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("hash is: ", h)
+
+	dur, err := timeHttpFetch("https://v04x.ipfs.io/ipfs/" + h)
+	if err != nil {
+		ipns_g.Set(-1)
+		return err
+	}
+
+	fmt.Println("resolve took: ", dur)
+	g.Set(dur.Seconds())
+	return nil
 }
-*/
 
 var bootstrappers = map[string]string{
 	"neptune": "QmSoLnSGccFuZQJzRadHn95W2CrSFmZuTdDWP8HXaHca9z",
@@ -164,23 +227,29 @@ func main() {
 	addr := flag.String("addr", ":9999", "address to serve metrics on")
 	flag.Parse()
 
-	go monitorHttpEndpoint(vers_g, "https://ipfs.io/version", time.Second*5)
-	go monitorHttpEndpoint(blog_g, "http://blog.ipfs.io", time.Second*30)
+	//go monitorHttpEndpoint(vers_g, "https://ipfs.io/version", time.Second*5)
+	//go monitorHttpEndpoint(blog_g, "http://blog.ipfs.io", time.Second*30)
+	//go monitorHttpEndpoint(ipns_g, "https://ipfs.io/ipns/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ", time.Minute)
 
-	for k, v := range bootstrappers {
-		ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:      "ping",
-			Subsystem: "ext_watcher",
-			Namespace: "ipfs",
-			Help:      "time it takes to ping a host",
-			ConstLabels: prometheus.Labels{
-				"host": k,
-			},
-		})
+	go monitorNewHashResolution(newh_g, time.Second)
+	//go monitorNewHashResolution(newh_g, time.Second*30)
 
-		prometheus.MustRegister(ping_g)
-		go monitorPings(ping_g, v)
-	}
+	/*
+		for k, v := range bootstrappers {
+			ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
+				Name:      "ping",
+				Subsystem: "ext_watcher",
+				Namespace: "ipfs",
+				Help:      "time it takes to ping a host",
+				ConstLabels: prometheus.Labels{
+					"host": k,
+				},
+			})
+
+			prometheus.MustRegister(ping_g)
+			go monitorPings(ping_g, v)
+		}
+	*/
 
 	http.Handle("/metrics", prometheus.Handler())
 	http.ListenAndServe(*addr, nil)
