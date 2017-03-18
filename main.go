@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -13,13 +14,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/net/context"
-	peer "gx/ipfs/QmQGwpJy9P4yXZySmqkZEXCmbBpJUb8xntCv8Ca4taZwDC/go-libp2p-peer"
-	ma "gx/ipfs/QmYzDkkgAEmrcNzFCiYo6L1dTX4EAG1gZkbtdbd9trL4vd/go-multiaddr"
-	pstore "gx/ipfs/QmZ62t46e9p7vMYqCmptwQC1RhRv5cpQ5cwoqYspedaXyq/go-libp2p-peerstore"
+	ma "gx/ipfs/QmSWLfmj5frN9xVLMMN846dMDriy5wN5jeghUm7aTW3DAG/go-multiaddr"
+	peer "gx/ipfs/QmWUswjn261LSyVxWAEpMVtPdy8zmKBJJfBpG3Qdpa8ZsE/go-libp2p-peer"
+	pstore "gx/ipfs/Qme1g4e3m2SmdiSGGU3vSWmUStwUjc5oECnEriaK9Xa1HU/go-libp2p-peerstore"
 
-	core "github.com/ipfs/go-ipfs/core"
-	cunix "github.com/ipfs/go-ipfs/core/coreunix"
+	core "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core"
+	cunix "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core/coreunix"
 )
 
 var _ = os.DevNull

@@ -1,0 +1,23 @@
+{
+  "author": "whyrusleeping",
+  "bugs": {
+    "url": "https://github.com/whyrusleeping/ipfs-watcher"
+  },
+  "gx": {
+    "dvcsimport": "github.com/whyrusleeping/ipfs-watcher"
+  },
+  "gxDependencies": [
+    {
+      "hash": "QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G",
+      "name": "go-ipfs",
+      "version": "0.4.7"
+    }
+  ],
+  "gxVersion": "0.11.0",
+  "language": "go",
+  "license": "",
+  "name": "ipfs-watcher",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
+  "version": "0.0.0"
+}
+

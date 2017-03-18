@@ -1,27 +1,22 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 
-	key "github.com/ipfs/go-ipfs/blocks/key"
-	core "github.com/ipfs/go-ipfs/core"
-	repo "github.com/ipfs/go-ipfs/repo"
-	cfg "github.com/ipfs/go-ipfs/repo/config"
-	"golang.org/x/net/context"
+	core "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core"
+	repo "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/repo"
+	cfg "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/repo/config"
+	peer "gx/ipfs/QmWUswjn261LSyVxWAEpMVtPdy8zmKBJJfBpG3Qdpa8ZsE/go-libp2p-peer"
 
-	ds "github.com/ipfs/go-ipfs/Godeps/_workspace/src/github.com/ipfs/go-datastore"
-	ci "gx/ipfs/QmUEUu1CM8bxBJxc3ZLojAi8evhTr4byQogWstABet79oY/go-libp2p-crypto"
+	ci "gx/ipfs/QmPGxZ1DP2w45WcogpW1h43BvseXbfke9N91qotpoQcUeS/go-libp2p-crypto"
+	ds "gx/ipfs/QmRWDav6mzWseLWeYfVd5fvUKiVe9xNH29YfMF438fG364/go-datastore"
 )
 
 func getRepo() (repo.Repo, error) {
 	c := cfg.Config{}
-	priv, pub, err := ci.GenerateKeyPairWithReader(ci.RSA, 1024, rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := pub.Hash()
+	priv, _, err := ci.GenerateKeyPairWithReader(ci.RSA, 1024, rand.Reader)
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +26,14 @@ func getRepo() (repo.Repo, error) {
 		return nil, err
 	}
 
+	pid, err := peer.IDFromPrivateKey(priv)
+	if err != nil {
+		return nil, err
+	}
+
 	c.Bootstrap = cfg.DefaultBootstrapAddresses
 	c.Addresses.Swarm = []string{"/ip4/0.0.0.0/tcp/0"}
-	c.Identity.PeerID = key.Key(data).B58String()
+	c.Identity.PeerID = pid.Pretty()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 
 	return &repo.Mock{
