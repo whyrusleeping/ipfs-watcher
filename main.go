@@ -234,20 +234,22 @@ func main() {
 
 	go monitorNewHashResolution(newh_g, time.Second*30)
 
-	for k, v := range bootstrappers {
-		ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:      "ping",
-			Subsystem: "ext_watcher",
-			Namespace: "ipfs",
-			Help:      "time it takes to ping a host",
-			ConstLabels: prometheus.Labels{
-				"host": k,
-			},
-		})
+	/*
+		for k, v := range bootstrappers {
+			ping_g := prometheus.NewGauge(prometheus.GaugeOpts{
+				Name:      "ping",
+				Subsystem: "ext_watcher",
+				Namespace: "ipfs",
+				Help:      "time it takes to ping a host",
+				ConstLabels: prometheus.Labels{
+					"host": k,
+				},
+			})
 
-		prometheus.MustRegister(ping_g)
-		go monitorPings(ping_g, v)
-	}
+			prometheus.MustRegister(ping_g)
+			go monitorPings(ping_g, v)
+		}
+	*/
 
 	http.Handle("/metrics", prometheus.Handler())
 	http.ListenAndServe(*addr, nil)
