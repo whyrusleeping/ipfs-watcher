@@ -14,12 +14,13 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	ma "gx/ipfs/QmSWLfmj5frN9xVLMMN846dMDriy5wN5jeghUm7aTW3DAG/go-multiaddr"
-	peer "gx/ipfs/QmWUswjn261LSyVxWAEpMVtPdy8zmKBJJfBpG3Qdpa8ZsE/go-libp2p-peer"
-	pstore "gx/ipfs/Qme1g4e3m2SmdiSGGU3vSWmUStwUjc5oECnEriaK9Xa1HU/go-libp2p-peerstore"
+	pstore "gx/ipfs/QmPgDWmTmuzvP7QE5zwo1TmjbJme9pmZHNujB2453jkCTr/go-libp2p-peerstore"
+	ma "gx/ipfs/QmXY77cVe7rVRQXZZQRioukUM7aRW3BTcAgJe12MCtb3Ji/go-multiaddr"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 
-	core "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core"
-	cunix "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core/coreunix"
+	core "gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/core"
+	"gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/importer"
+	"gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/importer/chunk"
 )
 
 var _ = os.DevNull
@@ -192,12 +193,17 @@ func tryResolve(g prometheus.Gauge) error {
 	}
 
 	rr := rand.New(rand.NewSource(time.Now().UnixNano()))
-	h, err := cunix.Add(nd, io.LimitReader(rr, 2048))
+
+	addnd, err := importer.BuildDagFromReader(nd.DAG, chunk.DefaultSplitter(io.LimitReader(rr, 2048)))
 	if err != nil {
 		return err
 	}
 
-	dur, err := timeHttpFetch("https://v04x.ipfs.io/ipfs/" + h)
+	if err := nd.Routing.Provide(ctx, addnd.Cid(), true); err != nil {
+		return err
+	}
+
+	dur, err := timeHttpFetch("https://ipfs.io/ipfs/" + addnd.Cid().String())
 	if err != nil {
 		ipns_g.Set(-1)
 		return err

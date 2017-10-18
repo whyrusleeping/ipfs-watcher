@@ -5,13 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	core "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/core"
-	repo "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/repo"
-	cfg "gx/ipfs/QmToMeLQSNX1mqYV1vbtqfth9HtVgUi3FYJ732tAbxhp8G/go-ipfs/repo/config"
-	peer "gx/ipfs/QmWUswjn261LSyVxWAEpMVtPdy8zmKBJJfBpG3Qdpa8ZsE/go-libp2p-peer"
+	core "gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/core"
+	repo "gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/repo"
+	cfg "gx/ipfs/QmNUKMfTHQQpEwE8bUdv5qmKC3ymdW7zw82LFS8D6MQXmu/go-ipfs/repo/config"
+	peer "gx/ipfs/QmXYjuNuxVzXKJCfWasQk1RqkhVLDM9jtUKhqc2WPQmFSB/go-libp2p-peer"
 
-	ci "gx/ipfs/QmPGxZ1DP2w45WcogpW1h43BvseXbfke9N91qotpoQcUeS/go-libp2p-crypto"
-	ds "gx/ipfs/QmRWDav6mzWseLWeYfVd5fvUKiVe9xNH29YfMF438fG364/go-datastore"
+	ds "gx/ipfs/QmVSase1JP7cq9QkPT46oNwdp9pT6kBkG3oqS14y3QcZjG/go-datastore"
+	ci "gx/ipfs/QmaPbCnUMBohSGo3KnxEa2bHqyJVVeEEcwtqJAYxerieBo/go-libp2p-crypto"
 )
 
 func getRepo() (repo.Repo, error) {
