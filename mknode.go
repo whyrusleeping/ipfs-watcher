@@ -32,7 +32,7 @@ func getRepo() (repo.Repo, error) {
 	}
 
 	c.Bootstrap = cfg.DefaultBootstrapAddresses
-	c.Addresses.Swarm = []string{"/ip4/0.0.0.0/tcp/0"}
+	c.Addresses.Swarm = []string{"/ip4/0.0.0.0/tcp/9898"}
 	c.Identity.PeerID = pid.Pretty()
 	c.Identity.PrivKey = base64.StdEncoding.EncodeToString(privkeyb)
 

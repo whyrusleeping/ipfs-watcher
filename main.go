@@ -62,6 +62,7 @@ func init() {
 	prometheus.MustRegister(vers_g)
 	prometheus.MustRegister(blog_g)
 	prometheus.MustRegister(ipns_g)
+	prometheus.MustRegister(newh_g)
 }
 
 func monitorHttpEndpoint(g prometheus.Gauge, url string, interval time.Duration) {
@@ -158,7 +159,7 @@ func monitorNewHashResolution(g prometheus.Gauge, period time.Duration) {
 	}
 }
 
-func tryResolve(g prometheus.Gauge) error {
+func tryResolve(fetch_g prometheus.Gauge) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -193,7 +194,6 @@ func tryResolve(g prometheus.Gauge) error {
 	}
 
 	rr := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	addnd, err := importer.BuildDagFromReader(nd.DAG, chunk.DefaultSplitter(io.LimitReader(rr, 2048)))
 	if err != nil {
 		return err
@@ -209,7 +209,7 @@ func tryResolve(g prometheus.Gauge) error {
 		return err
 	}
 
-	g.Set(dur.Seconds())
+	fetch_g.Set(dur.Seconds())
 	return nil
 }
 
